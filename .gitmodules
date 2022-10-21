@@ -1,0 +1,3 @@
+[submodule "api/rde-daemon-api"]
+	path = api/rde-daemon-api
+	url = https://github.com/rde-web/rde-daemon-api
