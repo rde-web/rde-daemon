@@ -2,7 +2,7 @@ GRPC_DEPS:=\
 	google.golang.org/protobuf/cmd/protoc-gen-go\
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc
 run:
-	@go run ./cmd/daemon/main.go
+	@go run ./cmd/rde-daemon/main.go
 
 docker-generate:
 	@docker run --rm \

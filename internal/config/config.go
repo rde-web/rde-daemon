@@ -4,7 +4,8 @@ var Config config
 
 func init() {
 	Config = config{
-		ProjectPath: "/project",
+		ProjectPath: "tmp/",
+		// ProjectPath: "/project",
 	}
 }
 
