@@ -25,7 +25,7 @@ func (FS) LS(ctx context.Context, req *LSRequest) (*LSResponse, error) {
 		Files: make(map[string]*Info),
 	}
 	filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
-		result.Files[path.Join(p, d.Name())] = &Info{
+		result.Files[strings.Replace(p, config.Config.ProjectPath, "/", 1)] = &Info{
 			IsDir: d.IsDir(),
 		}
 		return nil
