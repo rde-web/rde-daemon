@@ -1,14 +1,18 @@
 package config
 
-var Config config
+var Instance config
 
 func init() {
-	Config = config{
-		ProjectPath: "tmp/",
-		// ProjectPath: "/project",
+	Instance = config{
+		ProjectPath: "/project",
+		// SocketsPath: "/var/rde",
+		SocketsPath: ".",
+		Commutator:  "localhost:8080",
 	}
 }
 
 type config struct {
 	ProjectPath string
+	SocketsPath string
+	Commutator  string
 }
