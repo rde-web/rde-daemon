@@ -5,9 +5,9 @@ var Instance config
 func init() {
 	Instance = config{
 		ProjectPath: "/project",
-		// SocketsPath: "/var/rde",
 		SocketsPath: ".",
-		Commutator:  "localhost:8080",
+		// SocketsPath: "/var/rde",
+		Commutator: "localhost:8080",
 	}
 }
 

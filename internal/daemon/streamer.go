@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net"
 	"rde-daemon/internal/config"
@@ -17,6 +18,15 @@ type message struct {
 	Payload []byte `msgpack:"pld"`
 }
 
+const (
+	remoteSetupOK   uint8 = iota
+	rmeoteSetupFail uint8 = iota
+)
+
+type info struct {
+	ID string `msgpack:"daemon_id"`
+}
+
 type Streamer struct {
 	conn net.Conn
 }
@@ -28,6 +38,8 @@ func (s *Streamer) Run(errChan *chan error) {
 		return
 	}
 	s.conn = conn
+	s.rmeoteSetup()
+
 	for {
 		var buff []byte = make([]byte, bufferSize)
 		readN, errRead := s.conn.Read(buff)
@@ -51,6 +63,30 @@ func (s *Streamer) Run(errChan *chan error) {
 			*errChan <- errWrite
 			return
 		}
+	}
+}
+
+func (s *Streamer) rmeoteSetup() error {
+	var setupMsg info
+	setupMsg.ID = "daemon" //@todo
+	data, errEncode := encode(setupMsg)
+	if errEncode != nil {
+		return errEncode
+	}
+	if _, errSetup := s.conn.Write(data); errSetup != nil {
+		return errSetup
+	}
+	var buf []byte = make([]byte, 1)
+	readN, errRead := s.conn.Read(buf)
+	if errRead != nil {
+		return errRead
+	}
+	log.Printf("reded %d bytes", readN)
+	switch buf[0] {
+	case remoteSetupOK:
+		return nil
+	default:
+		return fmt.Errorf("comutator returned non-ok response (%d)", buf[0])
 	}
 }
 

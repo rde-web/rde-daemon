@@ -35,7 +35,7 @@ func main() {
 	serviceFS.Shutdown()
 	streamer.Shutdown()
 
-	close(err)
 	close(sig)
 	log.Println("Everything shutted down")
+	os.Exit(0)
 }
