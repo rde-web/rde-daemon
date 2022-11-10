@@ -36,6 +36,5 @@ func main() {
 	streamer.Shutdown()
 
 	close(sig)
-	log.Println("Everything shutted down")
 	os.Exit(0)
 }

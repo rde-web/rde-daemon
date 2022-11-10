@@ -7,7 +7,7 @@ func init() {
 		ProjectPath: "/project",
 		SocketsPath: ".",
 		// SocketsPath: "/var/rde",
-		Commutator: "localhost:8080",
+		Commutator: "localhost:8085",
 	}
 }
 

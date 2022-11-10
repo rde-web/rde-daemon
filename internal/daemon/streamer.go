@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"net"
 	"rde-daemon/internal/config"
@@ -13,18 +12,17 @@ const (
 )
 
 type message struct {
-	Service string `msgpack:"svc"`
-	Method  string `msgpack:"mtd"`
-	Payload []byte `msgpack:"pld"`
+	Service string      `json:"svc"`
+	Method  string      `json:"mtd"`
+	Payload interface{} `json:"pld"`
 }
 
-const (
-	remoteSetupOK   uint8 = iota
-	rmeoteSetupFail uint8 = iota
-)
-
 type info struct {
-	ID string `msgpack:"daemon_id"`
+	ID string `json:"did"`
+}
+
+type errResponse struct {
+	Err string `json:"err"`
 }
 
 type Streamer struct {
@@ -47,17 +45,26 @@ func (s *Streamer) Run(errChan *chan error) {
 			*errChan <- errRead
 			return
 		}
-		log.Printf("readed %d bytes", readN)
 		var msg message
-		if errDecode := decode(buff, &msg); errDecode != nil {
+		if errDecode := decode(buff[:readN], &msg); errDecode != nil {
 			*errChan <- errDecode
 			return
 		}
-		var reader bytes.Buffer = *bytes.NewBuffer(msg.Payload)
+		b, errEncode := encode(msg.Payload)
+		if errEncode != nil {
+			*errChan <- errEncode
+			return
+		}
+		var reader bytes.Buffer = *bytes.NewBuffer(b)
 		defer reader.Reset()
 		rsp, errCall := NewClient(msg.Service).Post(msg.Method, &reader)
 		if errCall != nil {
-			rsp = []byte(errCall.Error())
+			var err errResponse = errResponse{Err: errCall.Error()}
+			serialized, errEncodeError := encode(err)
+			if errEncodeError != nil {
+				log.Printf("Streamer encode error fail: %v", errEncodeError)
+			}
+			rsp = serialized
 		}
 		if _, errWrite := conn.Write(rsp); errWrite != nil {
 			*errChan <- errWrite
@@ -76,18 +83,7 @@ func (s *Streamer) rmeoteSetup() error {
 	if _, errSetup := s.conn.Write(data); errSetup != nil {
 		return errSetup
 	}
-	var buf []byte = make([]byte, 1)
-	readN, errRead := s.conn.Read(buf)
-	if errRead != nil {
-		return errRead
-	}
-	log.Printf("reded %d bytes", readN)
-	switch buf[0] {
-	case remoteSetupOK:
-		return nil
-	default:
-		return fmt.Errorf("comutator returned non-ok response (%d)", buf[0])
-	}
+	return nil
 }
 
 func (s *Streamer) Shutdown() error {

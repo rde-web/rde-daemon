@@ -1,14 +1,13 @@
 package daemon
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"path"
 	"rde-daemon/internal/config"
 	"strings"
-
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 type service interface {
@@ -76,11 +75,15 @@ func makePath(p string) string {
 }
 
 func decode(data []byte, dst interface{}) error {
-	return msgpack.Unmarshal(data, dst)
+	// return msgpack.Unmarshal(data, dst)
+	// @todo cannot correctrly decode msg pack on rde-commutator
+	return json.Unmarshal(data, dst)
 }
 
 func encode(src interface{}) ([]byte, error) {
-	return msgpack.Marshal(src)
+	// return msgpack.Marshal(src)
+	// @todo cannot correctrly decode msg pack on rde-commutator
+	return json.Marshal(src)
 }
 
 func RunService(srvc service) error {

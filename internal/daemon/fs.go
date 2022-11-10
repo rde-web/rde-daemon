@@ -59,18 +59,18 @@ func (f *FS) Shutdown() error {
 
 type (
 	lsRequest struct {
-		Path string `msgpack:"path"`
+		Path string `json:"path"`
 	}
 	lsResponse struct {
-		Files map[string]lsInfo `msgpack:"files"`
+		Files map[string]lsInfo `json:"files"`
 	}
 	lsInfo struct {
-		IsDir bool `msgpack:"is_dir"`
+		IsDir bool `json:"is_dir"`
 	}
 
 	catRequest  lsRequest
 	catResponse struct {
-		Content string `msgpack:"content"`
+		Content string `json:"content"`
 	}
 
 	touchRequest  lsRequest
@@ -89,6 +89,9 @@ func (FS) LS(req lsRequest) (*lsResponse, error) {
 		Files: make(map[string]lsInfo),
 	}
 	filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if d == nil {
+			return nil
+		}
 		result.Files[strings.Replace(p, config.Instance.ProjectPath, "/", 1)] = lsInfo{
 			IsDir: d.IsDir(),
 		}
