@@ -23,7 +23,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: dafaque/go-grpc-generator
+          images: dafaque/rde-daemon
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
