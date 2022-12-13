@@ -62,7 +62,7 @@ func (s *Streamer) Run(errChan *chan error) {
 			}
 			rsp = serialized
 		}
-		if _, errWrite := conn.Write(rsp); errWrite != nil {
+		if errWrite := s.write(rsp); errWrite != nil {
 			*errChan <- errWrite
 			return
 		}
