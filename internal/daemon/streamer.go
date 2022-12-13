@@ -5,10 +5,7 @@ import (
 	"log"
 	"net"
 	"rde-daemon/internal/config"
-)
-
-const (
-	bufferSize uint16 = 256
+	"time"
 )
 
 type message struct {
@@ -36,17 +33,16 @@ func (s *Streamer) Run(errChan *chan error) {
 		return
 	}
 	s.conn = conn
-	s.rmeoteSetup()
+	s.remeoteSetup()
 
 	for {
-		var buff []byte = make([]byte, bufferSize)
-		readN, errRead := s.conn.Read(buff)
+		buff, errRead := s.read()
 		if errRead != nil {
 			*errChan <- errRead
 			return
 		}
 		var msg message
-		if errDecode := decode(buff[:readN], &msg); errDecode != nil {
+		if errDecode := decode(buff, &msg); errDecode != nil {
 			*errChan <- errDecode
 			return
 		}
@@ -73,17 +69,68 @@ func (s *Streamer) Run(errChan *chan error) {
 	}
 }
 
-func (s *Streamer) rmeoteSetup() error {
+func (s *Streamer) remeoteSetup() error {
 	var setupMsg info
 	setupMsg.ID = "daemon" //@todo
 	data, errEncode := encode(setupMsg)
 	if errEncode != nil {
 		return errEncode
 	}
-	if _, errSetup := s.conn.Write(data); errSetup != nil {
-		return errSetup
+	return s.write(data)
+}
+
+func (s *Streamer) write(data []byte) error {
+	var batchSize int = config.Instance.BufferSize
+	if len(data) <= batchSize {
+		_, err := s.conn.Write(data)
+		return err
 	}
-	return nil
+	for {
+		if errSetDeadline := s.conn.SetWriteDeadline(
+			time.Now().Add(config.Instance.StreamerWriteTimeout * time.Second),
+		); errSetDeadline != nil {
+			return errSetDeadline
+		}
+		var size int = batchSize
+		var delta int = len(data) - size
+		if delta < 0 {
+			size += delta
+		}
+		var payload []byte = data[:size]
+		writedN, err := s.conn.Write(payload)
+		if err != nil {
+			return err
+		}
+		if delta <= 0 {
+			break
+		}
+		data = data[writedN:]
+	}
+	_, errSendEOF := s.conn.Write([]byte{0}) // EOF
+	return errSendEOF
+}
+
+func (s *Streamer) read() ([]byte, error) {
+	var result []byte = make([]byte, 0)
+	for {
+		var buff []byte = make([]byte, config.Instance.BufferSize)
+
+		if errSetDeadline := s.conn.SetReadDeadline(
+			time.Now().Add(config.Instance.StreamerReadTimeout * time.Second),
+		); errSetDeadline != nil {
+			return nil, errSetDeadline
+		}
+
+		readedN, err := s.conn.Read(buff)
+		if err != nil {
+			return nil, err
+		}
+		if readedN == 1 && buff[0] == 0 {
+			break
+		}
+		result = append(result, buff[:readedN]...)
+	}
+	return result, nil
 }
 
 func (s *Streamer) Shutdown() error {

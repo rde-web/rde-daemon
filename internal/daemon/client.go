@@ -34,7 +34,7 @@ func (c *Client) Post(route string, body io.Reader) ([]byte, error) {
 		Host:   "unix",
 		Path:   route,
 	}
-	rsp, errDoPost := c.client.Post(uri.String(), "application/msgpack", body)
+	rsp, errDoPost := c.client.Post(uri.String(), "application/json", body)
 	if errDoPost != nil {
 		return nil, errDoPost
 	}
